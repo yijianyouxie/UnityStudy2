@@ -44,8 +44,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - Contrast: 1
-    - FlareIntensity: 4
-    - FlareOffsetCount: 8
+    - FlareIntensity: 5
+    - FlareOffsetCount: 6
     - PostExposure: 1
     - Saturation: 1
     - ScaleFlare1: 7
@@ -55,7 +55,7 @@ Material:
     - SizeTest: 11
     - Threshold: 1
     - Ylevel: 0
-    - _Disaturate: 0.417
+    - _Disaturate: 0.448
     - _Max: 1
     - _Min: 0
     m_Colors:

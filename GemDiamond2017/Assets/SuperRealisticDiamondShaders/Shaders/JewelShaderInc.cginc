@@ -3,11 +3,11 @@
 
 float Test_;
 
-			struct appdata
-			{
-				float4 vertex : POSITION;
-				float3 normal : NORMAL;
-				float2 uv : TEXCOORD0;
+struct appdata
+{
+	float4 vertex : POSITION;
+	float3 normal : NORMAL;
+	float2 uv : TEXCOORD0;
     /*float2 uv2 : TEXCOORD1;
     float2 uv3 : TEXCOORD2;
     float2 uv4 : TEXCOORD3;
@@ -35,9 +35,9 @@ samplerCUBE _Environment;
 half4 _Environment_HDR;
 float FixedlightEstimation;
 float ColorIntensity;
-			struct v2f 
-			{
-				float2 uv : TEXCOORD0; 
+struct v2f 
+{
+	float2 uv : TEXCOORD0; 
     /*float2 uv2 : TEXCOORD1;
     float2 uv3 : TEXCOORD2;*/
     float3 WorldBitangent : TEXCOORD1;
@@ -52,10 +52,10 @@ float ColorIntensity;
     float4 tangent : TEXCOORD7;
 };
 			
-			// vertex shader
-			v2f vert (appdata v)
-			{
-				v2f o;
+// vertex shader
+v2f vert (appdata v)
+{
+	v2f o;
     
     
 
@@ -63,7 +63,7 @@ float ColorIntensity;
     
     //float3 VertP = lerp(v.vertex, float3(v.uv2, v.uv3.x), Test);
    
-    
+    //构建世界切线，法线，次法线
     float3 _worldTangent = UnityObjectToWorldDir(v.tangent);
     o.tangent.xyz = _worldTangent;
     float3 _worldNormal = UnityObjectToWorldNormal(v.normal);
@@ -76,7 +76,9 @@ float ColorIntensity;
     
     
     float4 pos = v.vertex;
-
+	//得到了一个相对于中心点的一个本地坐标
+	//其实是得到相对于轴心点的位置，因为后边的摄像机的位置也是根据模型的轴心点来的。
+	//摄像机变换到模型本地的矩阵中和这里都减去了CentreModel，是不是也可以都不减去呢
     pos.xyz = (pos.xyz - CentreModel.xyz);
     
     o.vertex = UnityObjectToClipPos(pos);
@@ -85,11 +87,12 @@ float ColorIntensity;
     
  //   cameraLocalPos = mul(MatrixWorldToObject, float4(_WorldSpaceCameraPos, 1));
     
+	//获取摄像机在钻石模型空间中的位置
     cameraLocalPos = mul(MatrixWorldToObject, float4(_WorldSpaceCameraPos, 1));
     
     
     
-    
+    //Pos2就是摄像机在钻石模型空间中的位置
     o.Pos2 = cameraLocalPos;
     
     
@@ -103,13 +106,14 @@ float ColorIntensity;
     /*o.uv2 = v.uv2;
     o.uv3 = v.uv3;*/
   //  o.uv4 = v.uv4;
+	//Pos就是相对于中心点的本地坐标
     o.Pos = float4(pos.xyz, 1);
 				o.Normal = v.normal;
     o.Color = v.Color;
     o.id = v.id;
     o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-				return o;
-			}
+	return o;
+}
 
 
 float Dispersion;
@@ -125,28 +129,28 @@ float Power;
 
 
 float DispersionIntensity;
-			sampler2D _ShapeTex;
-			float _Scale;
-            float TotalInternalReflection;
-			int _SizeX;
-			int _SizeY;
-			int _PlaneCount;
-			int _MaxReflection;
+sampler2D _ShapeTex;
+float _Scale;
+float TotalInternalReflection;
+int _SizeX;
+int _SizeY;
+int _PlaneCount;
+int _MaxReflection;
 
 samplerCUBE ReflectionCube;
 		//	samplerCUBE _Environment;
 // half4 _Environment_HDR;
-			float _RefractiveIndex;
+float _RefractiveIndex;
 
 float _RefractiveIndex_;
 
-			float _BaseReflection;
+float _BaseReflection;
 
 
 
 
 		
-			#define MAX_REFLECTION (10)
+#define MAX_REFLECTION (10)
 
 
 
@@ -167,16 +171,16 @@ float random(float2 st)
 
 
 float CalcReflectionRate(float3 normal, float3 ray, float baseReflection, float borderDot)
-			{
-				//float normalizedDot = clamp( (abs(dot(normal,ray)) - borderDot) / ( 1.0 - borderDot ), 0.0, 1.0);
+{
+	//float normalizedDot = clamp( (abs(dot(normal,ray)) - borderDot) / ( 1.0 - borderDot ), 0.0, 1.0);
     
     float normalizedDot = clamp((abs(dot(normal, ray)) - borderDot) / (1.0 - borderDot), 0.0, 1.0);
     
     
    // return baseReflection;
     
-				return baseReflection + (1.0-baseReflection)*pow(1.0-normalizedDot, 5);
-			}
+	return baseReflection + (1.0-baseReflection)*pow(1.0-normalizedDot, 5);
+}
 
 
 half rgb2hsv(half3 c)
@@ -195,151 +199,175 @@ float Remap(float value, float min1, float max1, float min2, float max2)
     return (min2 + (value - min1) * (max2 - min2) / (max1 - min1));
 }
 
-			float4 GetUnpackedPlaneByIndex(uint index)
-			{
-				int x_index = index % _SizeX;
-				int y_index = index / _SizeX;
+//这个函数返回的是_ShapeTex中存储的法线信息
+float4 GetUnpackedPlaneByIndex(uint index)
+{
+	int x_index = index % _SizeX;
+	int y_index = index / _SizeX;
 
-				float ustride = 1.0 / _SizeX;
-				float vstride = 1.0 / _SizeY;
+	float ustride = 1.0 / _SizeX;
+	float vstride = 1.0 / _SizeY;
 
-				float2 uv = float2((0.5+x_index)*ustride, (0.5+y_index)*vstride);
+	float2 uv = float2((0.5+x_index)*ustride, (0.5+y_index)*vstride);
 
-				float4 packedPlane = tex2D(_ShapeTex, uv);
+	float4 packedPlane = tex2D(_ShapeTex, uv);
 
 #if !defined(UNITY_COLORSPACE_GAMMA)
-				packedPlane.xyz = LinearToGammaSpace(packedPlane.xyz);
+	packedPlane.xyz = LinearToGammaSpace(packedPlane.xyz);
 #endif
+	//color*2 - 1
+	float3 normal = packedPlane.xyz*2 - float3(1,1,1); // смена диапозона
 
-				float3 normal = packedPlane.xyz*2 - float3(1,1,1); // смена диапозона
+	return float4(normal, packedPlane.w*_Scale);//a的数值表示：顶点的本地坐标在法线方向上的投影长度
+}
 
-				return float4(normal, packedPlane.w*_Scale);
-			}
-
-			
+//--rayStart 相对于几何中心点的本地坐标
+//--rayDirection 折射方向
 float CheckCollideRayWithPlane(float3 rayStart, float3 rayNormalized, float4 normalTriangle) // plane - normal.xyz и normal.w - distance
-			{
+{
+	//计算折射方向和法线方向的点积,也就是折射方向在法线方向上的投影长度
     float dp = dot(rayNormalized, normalTriangle.xyz);
 
-				if( dp < 0 )
-				{
-					return -1;
-				}
-				else
-				{
+	if( dp < 0 )
+	{
+		return -1;
+	}
+	else
+	{
+		//获取顶点在法线方向上投影的长度 - 相对于几何中心点的本地坐标在法线方向上投影的长度
         float distanceNormalized = normalTriangle.w - dot(rayStart.xyz, normalTriangle.xyz);
 
-					if( distanceNormalized < 0 )
-					{
-						return -1;
-					}
+		if( distanceNormalized < 0 )
+		{
+			return -1;
+		}
 
-					return distanceNormalized / dp;
-				}
-
-
-				return -1;
-			}
+		//
+		return distanceNormalized / dp;
+	}
 
 
-void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, float4 TriangleNormal, float startSideRelativeRefraction, out float reflectionRate, out float reflectionRate2, out float3 reflection, out float3 refraction, out float HorizontalElementSquared)
-			{
+	return -1;
+}
+
+/*
+--Pos 相对于几何中心点的本地坐标
+--PassCount
+--rayNormalized 摄像机指向顶点的向量
+--TriangleNormal 三角面的发现
+--startSideRelativeRefraction 起始侧的相对折射
+--reflectionRate 反射率
+--reflectionRate2 反射率2
+--reflection 反射方向
+--refraction 折射方向
+--HorizontalElementSquared 
+*/
+void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, float4 TriangleNormal, 
+						float startSideRelativeRefraction, out float reflectionRate, 
+						out float reflectionRate2, out float3 reflection, out float3 refraction, out float HorizontalElementSquared)
+{
+	//垂直于三角面的射线
     float3 rayVertical = dot(TriangleNormal.xyz, rayNormalized) * TriangleNormal.xyz;
-				reflection = rayNormalized - rayVertical*2.0;
+	//反射公式
+	reflection = rayNormalized - rayVertical*2.0;
     
  
     
-  //  reflection.r = pow(reflection.r, reflection.r * 2);
+	//reflection.r = pow(reflection.r, reflection.r * 2);
 
-				float3 rayHorizontal = rayNormalized - rayVertical;
-
-				float3 refractHorizontal = rayHorizontal * startSideRelativeRefraction ;
-
-				float horizontalElementSquared = dot(refractHorizontal, refractHorizontal);
+	//水平方向反射
+	float3 rayHorizontal = rayNormalized - rayVertical;
+	//水平折射方向，折射方向也没变啊，乘的是一个数，方向不会变化
+	float3 refractHorizontal = rayHorizontal * startSideRelativeRefraction ;
+	//水平折射方向的平方
+	float horizontalElementSquared = dot(refractHorizontal, refractHorizontal);
 				
-			/**/
+	/**/
     float borderDot = 0;
 
     
-				if( startSideRelativeRefraction > 1.0 )
-				{
-					borderDot = sqrt(1.0-1.0f/(startSideRelativeRefraction*startSideRelativeRefraction));
-				}
-				else
-				{
-					borderDot = 0.0;
-				} 
+	if( startSideRelativeRefraction > 1.0 )
+	{
+		borderDot = sqrt(1.0-1.0f/(startSideRelativeRefraction*startSideRelativeRefraction));
+	}
+	else
+	{
+		borderDot = 0.0;
+	} 
     
     
     
     HorizontalElementSquared = 0;
-  //  HorizontalElementSquared = horizontalElementSquared;
+	//HorizontalElementSquared = horizontalElementSquared;
     
-    
-    float3 _worldViewDir = UnityWorldSpaceViewDir(Pos);
-    _worldViewDir = normalize(_worldViewDir);
-    
-    
-    float fresnelNdotV5 = dot(rayNormalized.xyz, _worldViewDir);
+ //   //UnityWorldSpaceViewDir这个接口应该是接受一个世界坐标，然后返回世界空间下的从物体指向摄像机的方向
+	////但是这里是一个本地坐标啊
+	////这里计算出来后用来计算fresnel，fresnel并没有用到
+ //   float3 _worldViewDir = UnityWorldSpaceViewDir(Pos);
+ //   _worldViewDir = normalize(_worldViewDir);
+ //   
+ //   
+ //   float fresnelNdotV5 = dot(rayNormalized.xyz, _worldViewDir);
 
-    float fresnelNode5 = (FresnelDispersionScale * pow(1.0 - fresnelNdotV5, FresnelDispersionPower));
+ //   float fresnelNode5 = (FresnelDispersionScale * pow(1.0 - fresnelNdotV5, FresnelDispersionPower));
     
     
     HorizontalElementSquared = horizontalElementSquared /3;
     if (horizontalElementSquared >= TotalInternalReflection)  
-				{
+	{
         HorizontalElementSquared = 0;
         
         
-					reflectionRate = 1.0;
+		reflectionRate = 1.0;
         reflectionRate2 = 1.0;
         refraction = TriangleNormal.xyz;
 
-					return;
-				}				
-			
-				float verticalSizeSquared = 1-horizontalElementSquared;
-
-				float3 refractVertical = rayVertical * sqrt( verticalSizeSquared / dot(rayVertical, rayVertical));
- //   HorizontalElementSquared = verticalSizeSquared;
+		return;
+	}				
+	//垂直大小的平方 = 1 - 水平大小的平方
+	float verticalSizeSquared = 1-horizontalElementSquared;
+	//垂直方向上的折射方向
+	float3 refractVertical = rayVertical * sqrt( verticalSizeSquared / dot(rayVertical, rayVertical));
+	//   HorizontalElementSquared = verticalSizeSquared;
     
-				refraction = refractHorizontal + refractVertical;
+	//折射方向等于水平的加上垂直的
+	refraction = refractHorizontal + refractVertical;
 
-   //  refraction = lerp(TriangleNormal.xyz, refraction, Test_);
+	//  refraction = lerp(TriangleNormal.xyz, refraction, Test_);
     
     reflectionRate = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection * PassCount, borderDot);
 
     reflectionRate2 = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection * PassCount, borderDot);
     
-  //  reflectionRate = reflectionRate * CalcReflectionRate(rayNormalized, TriangleNormal.xyz, 1 * PassCount, borderDot);
+	//  reflectionRate = reflectionRate * CalcReflectionRate(rayNormalized, TriangleNormal.xyz, 1 * PassCount, borderDot);
     
     
 
 
     
- //   reflectionRate = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection, 0);
-   // reflectionRate = _BaseReflection;
+	//   reflectionRate = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection, 0);
+	// reflectionRate = _BaseReflection;
     
-				return;
-			}
+	return;
+}
 
 float3 CalcColorCoefByDistance(float distance,float4 Color)
-			{
+{
 
     return lerp(pow(max(Color.xyz, 0.01), distance * Color.w), Color.rgb, ColorByDepth);
   //  return pow(max(Color.xyz, 0.01), distance * Color.w);
 }
 
-			float4 SampleEnvironment(float3 rayLocal)
-			{
-				float3 rayWorld = mul(unity_ObjectToWorld, float4(rayLocal, 0));
+float4 SampleEnvironment(float3 rayLocal)
+{
+	float3 rayWorld = mul(unity_ObjectToWorld, float4(rayLocal, 0));
 
-				rayWorld = normalize(rayWorld);
+	rayWorld = normalize(rayWorld);
 
     
 #if _CUBEMAPMODE_CUBEMAP 
     float4 tex = texCUBElod(_Environment, float4(rayWorld,MipLevel));
-				return float4(DecodeHDR(tex, _Environment_HDR), 1);
+	return float4(DecodeHDR(tex, _Environment_HDR), 1);
     
 #endif
 
@@ -383,66 +411,82 @@ float3 CalcColorCoefByDistance(float distance,float4 Color)
     */
 }
 
-			void CheckCollideRayWithAllPlanes(float3 rayStart, float3 rayDirection, out float4 hitPlane, out float hitTime)
-			{
-				hitTime=1000000.0;
-				hitPlane=float4(1,0,0,1);
-		//		[unroll(20)]
+//--rayStart 相对于几何中心点的本地坐标
+//--rayDirection 折射方向
+void CheckCollideRayWithAllPlanes(float3 rayStart, float3 rayDirection, out float4 hitPlane, out float hitTime)
+{
+	hitTime=1000000.0;
+	hitPlane=float4(1,0,0,1);
+	//_PlaneCount是执行CalculateMesh的结果
+//	[unroll(20)]
     for(int i=0; i<_PlaneCount; ++i)
-				{
-					float4 plane = GetUnpackedPlaneByIndex(i);
-					float tmpTime = CheckCollideRayWithPlane(rayStart, rayDirection, plane);
+	{
+		//plane是获取ShapeTex中存储的法线信息
+		float4 plane = GetUnpackedPlaneByIndex(i);
+		float tmpTime = CheckCollideRayWithPlane(rayStart, rayDirection, plane);
 
-					if(tmpTime >= -0.001 && tmpTime<hitTime)
-					{
-						hitTime = tmpTime;
-						hitPlane = plane;
-					}
-				}
-			}
-
+		if(tmpTime >= -0.001 && tmpTime<hitTime)
+		{
+			hitTime = tmpTime;
+			hitPlane = plane;
+		}
+	}
+}
+/*
+--rayStart 相对于几何中心点的本地坐标
+--rayDirection 折射方向
+--refractiveIndex 折射率
+--MaxReflection 最大反射
+--_Color 外部传入的颜色
+--lighttransmission 光透射
+*/
 float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex, int MaxReflection, float4 Color, float lighttransmission)
-			{
-				float3 tmpRayStart = rayStart;
-				float3 tmpRayDirection = rayDirection;
+{
+	float3 tmpRayStart = rayStart;
+	float3 tmpRayDirection = rayDirection;
 
-				float reflectionRates[MAX_REFLECTION];
+	//定义反射和折射数组，最大长度是10
+	float reflectionRates[MAX_REFLECTION];
     float reflectionRates2[MAX_REFLECTION];
-				float4 refractionColors[MAX_REFLECTION];
+	float4 refractionColors[MAX_REFLECTION];
     float4 refractionColors2[MAX_REFLECTION];
     float4 refractionColors3[MAX_REFLECTION];
-				float4 depthColors[MAX_REFLECTION];
+	float4 depthColors[MAX_REFLECTION];
 
     
 
     
     
-    int loopCount = min(MAX_REFLECTION, _MaxReflection);
+    int loopCount = min(MAX_REFLECTION, _MaxReflection);//_MaxReflection在脚本里设置的最大反射数
  //   if (UV.x == 3)
   //  {
    //     loopCount = 1;
 
    // }
-				int badRay = 0;
+	int badRay = 0;
 
   //  [unroll(10)]
     for( int i = 0; i<loopCount; ++i )
-				{
-					float hitTime=1000000.0;
-					float4 hitPlane=float4(1,0,0,1);
-					CheckCollideRayWithAllPlanes(tmpRayStart, tmpRayDirection, hitPlane, hitTime);
+	{
+		float hitTime=1000000.0;
+		float4 hitPlane=float4(1,0,0,1);
+		//--tmpRayStart 相对于几何中心点的本地坐标
+		//--tmpRayDirection 折射方向
+		//--hitPlane 返回hitPlane
+		//--hitTime 返回hitTime
+		CheckCollideRayWithAllPlanes(tmpRayStart, tmpRayDirection, hitPlane, hitTime);
 
-					if (hitTime < 0.0)
-					{
-						badRay = 1;
-					}
+		if (hitTime < 0.0)
+		{
+			badRay = 1;
+		}
 										
-					float3 rayEnd = tmpRayStart + tmpRayDirection*hitTime;
+		float3 rayEnd = tmpRayStart + tmpRayDirection*hitTime;
 								
-					float reflectionRate;
+		float reflectionRate;
         float reflectionRate2;
-					float3 reflectionRay;
-					float3 refractionRay;
+		float3 reflectionRay;
+		float3 refractionRay;
         float PlaneNull;
 
         float i_Pass = i;
@@ -487,14 +531,14 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
         
     //    PlaneNull = lerp(PlaneNull,1,0);
         
-        
+        //世界空间下，由此点到摄像机的方向（参数应该是世界坐标，但是rayStart这个是本地坐标啊）
         float3 _worldViewDir = UnityWorldSpaceViewDir(rayStart.xyz);
-        _worldViewDir = normalize(_worldViewDir);
+        _worldViewDir = normalize(_worldViewDir);//归一化
 
         float fresnelNdotV5 = dot(tmpRayStart, _worldViewDir);
         float fresnelNode5 = (FresnelDispersionScale * pow(1.0 - fresnelNdotV5, FresnelDispersionPower));
         
-        fresnelNode5 = 1;
+        fresnelNode5 = 1;//这里强制为1了；上面计算的作废，也就是没有用到
         
         DispersionR = DispersionR * Dispersion * fresnelNode5;
         DispersionG = DispersionG * Dispersion * fresnelNode5;
@@ -649,7 +693,7 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
 
        
      
-            tmpReflectionColor = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j];
+        tmpReflectionColor = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j];
         
 				
      //   tmpReflectionColor = max(tmpReflectionColor, lerp(refractionColors2[j], tmpReflectionColor, reflectionRates2[j]) * depthColors[j]);
@@ -772,13 +816,13 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
         
     }
 				
-				if (badRay > 0)
-				{
-					return float4(1, 0, 0, 1);
-				}
-   // return float4(Prism_.xxx, 1);
-				return tmpReflectionColor;
-			}
+	if (badRay > 0)
+	{
+		return float4(1, 0, 0, 1);
+	}
+// return float4(Prism_.xxx, 1);
+	return tmpReflectionColor;
+}
 
 
 float4 CalculateContrast(float contrastValue, float4 colorTarget)
@@ -788,13 +832,7 @@ float4 CalculateContrast(float contrastValue, float4 colorTarget)
 }
 
 float4 ToneMap(float4 MainColor, float brightness, float Disaturate, float _max, float _min, float contrast, float Satur)
-{
-
-				
-
-				
-
-				
+{				
     fixed4 output = MainColor;
 			//	output = output * brightness;
     output = output * brightness;

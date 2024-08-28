@@ -376,17 +376,17 @@ namespace DiamondRender
                 return false;
             }
 
-            Vector3[] vertices = sourceMesh.vertices;
-            Vector3[] normals = sourceMesh.normals;
-            int[] indices = sourceMesh.GetIndices(0);
+            Vector3[] vertices = sourceMesh.vertices;//顶点坐标数组
+            Vector3[] normals = sourceMesh.normals;//顶点法线数组
+            int[] indices = sourceMesh.GetIndices(0);//组成mesh的顶点的索引数组
 
 
 
 
-
+            //获取拓扑类型
             MeshTopology topology = sourceMesh.GetTopology(0);
 
-
+            //模型的几何中心点
             CentreModel = new Vector4(1, 1, 1, 1);
 
             MaxPos = new Vector4(-9999999, -9999999, -9999999, 1);
@@ -428,11 +428,11 @@ namespace DiamondRender
 
             }
 
-
+            //上边循环找出模型的最大最小坐标后，计算几何中心点
             CentreModel.x = (MaxPos.x + MinPos.x) / 2;
             CentreModel.y = (MaxPos.y + MinPos.y) / 2;
             CentreModel.z = (MaxPos.z + MinPos.z) / 2;
-
+            //平移中心点到上面计算出的新中心点
             for (int i = 0; i < vertices.Length; i++)
             {
                 vertices[i].x = vertices[i].x - CentreModel.x;
@@ -440,13 +440,14 @@ namespace DiamondRender
                 vertices[i].z = vertices[i].z - CentreModel.z;
             }
 
-
-                scale = 0.0f;
+            //计算所有顶点到几何中心点的长度，并取最大的那个长度
+            scale = 0.0f;
             // calc scale
             for (int i = 0; i < vertices.Length; ++i)
             {
                 // 5% margin
                 scale = Mathf.Max(vertices[i].magnitude * 1.05f, scale);
+                //Debug.LogError("========scale:" + scale + " magnitude:" + vertices[i].magnitude);
             }
 
             int texSize = 4;
@@ -501,17 +502,17 @@ namespace DiamondRender
 
                 // new version (optimized)
                 List<Color> tmpPlanes = new List<Color>();
-
+                //计算面数。顶点组织数据除以拓扑结构的几个顶点构成一个面
                 int faceCount = indices.Length / stride;
 
                 for (int i = 0; i < faceCount; i++)
                 {
                     int index = i * stride;
-
+                    //以三个顶点组成一个面为例，获取小组中的第一个作为主要点，通过此点获取位置和法线
                     int vertIndex = indices[index];
                     Vector3 primaryPosition = vertices[vertIndex];
                     Vector3 primaryNormal = normals[vertIndex];
-
+                    //根据位置，发现和缩放，构成一个color
                     Color packedPlane = PackPlaneIntoColor(primaryPosition, primaryNormal, scale);
 
                     bool duplicated = false;
@@ -519,11 +520,12 @@ namespace DiamondRender
                     {
                         if( c == packedPlane )
                         {
+                            Debug.LogError("========duplicated，i:" + i);
                             duplicated = true;
                             break;
                         }
                     }
-
+                    //去除掉重复的颜色值
                     if( !duplicated )
                     {
                         tmpPlanes.Add(packedPlane);
@@ -559,17 +561,28 @@ namespace DiamondRender
 #endif
             return true;
         }
-
+        /// <summary>
+        /// 根据顶点位置和法线，打包成一个颜色值
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="normal"></param>
+        /// <param name="in_scale"></param>
+        /// <returns></returns>
         static Color PackPlaneIntoColor(Vector3 position, Vector3 normal, float in_scale)
         {
             Color retval;
-
+            //法线肯定是归一化的在[-1,1],转化到[0,1]
             retval.r = (normal.x + 1.0f) * 0.5f;
             retval.g = (normal.y + 1.0f) * 0.5f;
             retval.b = (normal.z + 1.0f) * 0.5f;
 
-           //    retval.a = dots;
-              retval.a = Vector3.Dot(position, normal) / in_scale;
+            //    retval.a = dots;
+            //这里获得的是顶点方向在法线方向上的投影长度
+            //然后这个长度除以所有顶点到几何中心点的长度中的最大长度
+            //Vector3.Dot(position, normal)这一句的几何意义是两个向量的长度乘以两个向量的cos值，因为position的最大值是in_scale
+            //cos值的最大值也是1，所以这个a值的最大值是1
+            //Vector3.Dot(position, normal)表示的是顶点的本地坐标在法线方向上的投影长度
+            retval.a = Vector3.Dot(position, normal) / in_scale;//顶点本地坐标和法线的点积除以缩放值
 
             if (retval.a < 0 || retval.a > 1.0f)
             {

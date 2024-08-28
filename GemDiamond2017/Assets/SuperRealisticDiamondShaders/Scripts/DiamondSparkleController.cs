@@ -25,6 +25,8 @@ public class DiamondSparkleController : MonoBehaviour
 
         if(null != particleSystem)
         {
+            particleSystem.transform.localScale = Vector3.one;
+
             var main = particleSystem.main;
             main.loop = false;
             main.startLifetime = Mathf.Infinity;
@@ -37,7 +39,8 @@ public class DiamondSparkleController : MonoBehaviour
 
         particles = new ParticleSystem.Particle[particleSystem.main.maxParticles];
 
-        diamondMesh = diamondRenderer.GetComponent<MeshFilter>().mesh;
+        //这里会实例化一个mesh
+        diamondMesh = diamondRenderer.GetComponent<MeshFilter>().sharedMesh;
         vertices = diamondMesh.vertices;
         normals = diamondMesh.normals;
 
