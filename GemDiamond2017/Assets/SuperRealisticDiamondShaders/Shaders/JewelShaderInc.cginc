@@ -8,17 +8,10 @@ struct appdata
 	float4 vertex : POSITION;
 	float3 normal : NORMAL;
 	float2 uv : TEXCOORD0;
-    /*float2 uv2 : TEXCOORD1;
-    float2 uv3 : TEXCOORD2;
-    float2 uv4 : TEXCOORD3;
-    float2 uv5 : TEXCOORD4;*/
     float4 Color : COLOR;
     uint id : SV_VertexID;
     float4 tangent : TANGENT;
-
 };
-
-
 
 float FresnelDispersionPower;
 float FresnelDispersionScale;
@@ -38,14 +31,12 @@ float ColorIntensity;
 struct v2f 
 {
 	float2 uv : TEXCOORD0; 
-    /*float2 uv2 : TEXCOORD1;
-    float2 uv3 : TEXCOORD2;*/
     float3 WorldBitangent : TEXCOORD1;
     float3 WorldNormal : TEXCOORD2;
-				float4 vertex : SV_POSITION; 
-				float3 Pos : TEXCOORD3; 
+	float4 vertex : SV_POSITION; 
+	float3 Pos : TEXCOORD3; 
     float3 Pos2 : TEXCOORD4;
-				float3 Normal : NORMAL;
+	float3 Normal : NORMAL;
     float4 Color : COLOR;
     uint id : TEXCOORD5;
     float3 worldPos : TEXCOORD6;
@@ -55,13 +46,9 @@ struct v2f
 // vertex shader
 v2f vert (appdata v)
 {
-	v2f o;
-    
-    
+	v2f o;    
 
     UNITY_INITIALIZE_OUTPUT(v2f, o);
-    
-    //float3 VertP = lerp(v.vertex, float3(v.uv2, v.uv3.x), Test);
    
     //构建世界切线，法线，次法线
     float3 _worldTangent = UnityObjectToWorldDir(v.tangent);
@@ -71,9 +58,6 @@ v2f vert (appdata v)
     float _vertexTangentSign = v.tangent.w * unity_WorldTransformParams.w;
     float3 _worldBitangent = cross(_worldNormal, _worldTangent) * _vertexTangentSign;
     o.WorldBitangent.xyz = _worldBitangent;
-				
-   
-    
     
     float4 pos = v.vertex;
 	//得到了一个相对于中心点的一个本地坐标
@@ -85,8 +69,6 @@ v2f vert (appdata v)
     
     float3 cameraLocalPos;
     
- //   cameraLocalPos = mul(MatrixWorldToObject, float4(_WorldSpaceCameraPos, 1));
-    
 	//获取摄像机在钻石模型空间中的位置
     cameraLocalPos = mul(MatrixWorldToObject, float4(_WorldSpaceCameraPos, 1));
     
@@ -94,18 +76,8 @@ v2f vert (appdata v)
     
     //Pos2就是摄像机在钻石模型空间中的位置
     o.Pos2 = cameraLocalPos;
-    
-    
-    
-    
-   // pos = lerp(pos, mul(MatrixWorldToObject2, pos),CentreIntensity);
-    
-    
     o.vertex = UnityObjectToClipPos(v.vertex);
 	o.uv = v.uv;
-    /*o.uv2 = v.uv2;
-    o.uv3 = v.uv3;*/
-  //  o.uv4 = v.uv4;
 	//Pos就是相对于中心点的本地坐标
     o.Pos = float4(pos.xyz, 1);
 				o.Normal = v.normal;
@@ -145,20 +117,8 @@ float _RefractiveIndex;
 float _RefractiveIndex_;
 
 float _BaseReflection;
-
-
-
-
 		
 #define MAX_REFLECTION (10)
-
-
-
-
-
-
-
-
 
 float random(float2 st)
 {
@@ -172,12 +132,7 @@ float random(float2 st)
 
 float CalcReflectionRate(float3 normal, float3 ray, float baseReflection, float borderDot)
 {
-	//float normalizedDot = clamp( (abs(dot(normal,ray)) - borderDot) / ( 1.0 - borderDot ), 0.0, 1.0);
-    
     float normalizedDot = clamp((abs(dot(normal, ray)) - borderDot) / (1.0 - borderDot), 0.0, 1.0);
-    
-    
-   // return baseReflection;
     
 	return baseReflection + (1.0-baseReflection)*pow(1.0-normalizedDot, 5);
 }
@@ -270,10 +225,6 @@ void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, floa
     float3 rayVertical = dot(TriangleNormal.xyz, rayNormalized) * TriangleNormal.xyz;
 	//反射公式
 	reflection = rayNormalized - rayVertical*2.0;
-    
- 
-    
-	//reflection.r = pow(reflection.r, reflection.r * 2);
 
 	//水平方向反射
 	float3 rayHorizontal = rayNormalized - rayVertical;
@@ -293,24 +244,9 @@ void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, floa
 	else
 	{
 		borderDot = 0.0;
-	} 
-    
-    
+	}     
     
     HorizontalElementSquared = 0;
-	//HorizontalElementSquared = horizontalElementSquared;
-    
- //   //UnityWorldSpaceViewDir这个接口应该是接受一个世界坐标，然后返回世界空间下的从物体指向摄像机的方向
-	////但是这里是一个本地坐标啊
-	////这里计算出来后用来计算fresnel，fresnel并没有用到
- //   float3 _worldViewDir = UnityWorldSpaceViewDir(Pos);
- //   _worldViewDir = normalize(_worldViewDir);
- //   
- //   
- //   float fresnelNdotV5 = dot(rayNormalized.xyz, _worldViewDir);
-
- //   float fresnelNode5 = (FresnelDispersionScale * pow(1.0 - fresnelNdotV5, FresnelDispersionPower));
-    
     
     HorizontalElementSquared = horizontalElementSquared /3;
     if (horizontalElementSquared >= TotalInternalReflection)  
@@ -328,26 +264,13 @@ void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, floa
 	float verticalSizeSquared = 1-horizontalElementSquared;
 	//垂直方向上的折射方向
 	float3 refractVertical = rayVertical * sqrt( verticalSizeSquared / dot(rayVertical, rayVertical));
-	//   HorizontalElementSquared = verticalSizeSquared;
     
 	//折射方向等于水平的加上垂直的
 	refraction = refractHorizontal + refractVertical;
-
-	//  refraction = lerp(TriangleNormal.xyz, refraction, Test_);
     
     reflectionRate = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection * PassCount, borderDot);
 
-    reflectionRate2 = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection * PassCount, borderDot);
-    
-	//  reflectionRate = reflectionRate * CalcReflectionRate(rayNormalized, TriangleNormal.xyz, 1 * PassCount, borderDot);
-    
-    
-
-
-    
-	//   reflectionRate = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection, 0);
-	// reflectionRate = _BaseReflection;
-    
+    reflectionRate2 = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection * PassCount, borderDot);    
 	return;
 }
 
@@ -355,7 +278,6 @@ float3 CalcColorCoefByDistance(float distance,float4 Color)
 {
 
     return lerp(pow(max(Color.xyz, 0.01), distance * Color.w), Color.rgb, ColorByDepth);
-  //  return pow(max(Color.xyz, 0.01), distance * Color.w);
 }
 
 float4 SampleEnvironment(float3 rayLocal)
@@ -369,46 +291,12 @@ float4 SampleEnvironment(float3 rayLocal)
     float4 tex = texCUBElod(_Environment, float4(rayWorld,MipLevel));
 	return float4(DecodeHDR(tex, _Environment_HDR), 1);
     
-#endif
-
+#endif 
     
-    
-  //  UNITY_PASS_TEXCUBE_SAMPLER(unity_SpecCube1, unity_SpecCube0);
-    
-    
-    
-    
-    
-    
- //   float4 tex = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, float4(rayWorld, 0)) * (1 + (1 - lightEstimation2) * 5);
-    
-    
-#if _CUBEMAPMODE_REFLECTIONPROBE
-//    float4 tex = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, float4(rayWorld, 0)) / (lerp(1, lightEstimation2, FixedlightEstimation));
-    
- // float4 tex =   UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0,rayWorld, MipLevel) / (lerp(1, lightEstimation2, FixedlightEstimation));
-    
-    
+#if _CUBEMAPMODE_REFLECTIONPROBE    
     float4 tex =   UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0,rayWorld, MipLevel);
-    
-    
-  //  float4 tex = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, float4(rayWorld, 0)) * (1 + ((1 - lightEstimation2) * 5 * ((1 - lightEstimation2))));
-    
- //   float4 tex = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, float4(rayWorld, 0)) * 1 + lightEstimation2;
     return float4(DecodeHDR(tex, unity_SpecCube0_HDR), 1);
 #endif
-    
-    
-    
-    
-    
-    
-    
-    
-    /*
-    float4 tex = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, float4(rayWorld, 0));
-    return float4(DecodeHDR(tex, unity_SpecCube0_HDR), 1);
-    */
 }
 
 //--rayStart 相对于几何中心点的本地坐标
@@ -453,16 +341,8 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
     float4 refractionColors3[MAX_REFLECTION];
 	float4 depthColors[MAX_REFLECTION];
 
-    
-
-    
-    
     int loopCount = min(MAX_REFLECTION, _MaxReflection);//_MaxReflection在脚本里设置的最大反射数
- //   if (UV.x == 3)
-  //  {
-   //     loopCount = 1;
 
-   // }
 	int badRay = 0;
 
   //  [unroll(10)]
@@ -513,24 +393,13 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
         float Disp = pow(Dispersion , 2);
         
         float dispPow =  Dispersion * 0.4;
-       
-        
-       
-        
-        
-
-        
-        float depth2 = Remap(i, 0, loopCount, 0, 1);
-        
+ 
+        float depth2 = Remap(i, 0, loopCount, 0, 1);        
         
         depth2 = clamp(depth2, 0.0001, 1);
         
         depth2 = 1;
-        
-      //  PlaneNull = Remap(PlaneNull, 0, 2, 0, 1);
-        
-    //    PlaneNull = lerp(PlaneNull,1,0);
-        
+ 
         //世界空间下，由此点到摄像机的方向（参数应该是世界坐标，但是rayStart这个是本地坐标啊）
         float3 _worldViewDir = UnityWorldSpaceViewDir(rayStart.xyz);
         _worldViewDir = normalize(_worldViewDir);//归一化
@@ -546,19 +415,11 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
         
         
         float3 DispersionRay_r = lerp(refractionRay, lerp(rayEnd, refractionRay,2), DispersionR * PlaneNull);
-        
-    //    PlaneNull = lerp(PlaneNull, 1, 0.2);
-        
+
         float3 DispersionRay_g = lerp(refractionRay, lerp(rayEnd, refractionRay, 2), DispersionG * PlaneNull);
-        
-     //   PlaneNull = lerp(PlaneNull, 1, 0.2);
+
         float3 DispersionRay_b = lerp(refractionRay, lerp(rayEnd, refractionRay, 2), DispersionB * PlaneNull);
-        
-        
-        
-        
-        
-        
+
         float Depth_ = depthColors[i];
         
         Depth_ = Remap(Depth_, 0.997, 0.999, 1, 0);
@@ -572,32 +433,12 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
         refractionColors2[i].g = SampleEnvironment(DispersionRay_g).g;
         refractionColors2[i].b = SampleEnvironment(DispersionRay_b).b;
         
-    //    depthColors[i] = float4(CalcColorCoefByDistance(hitTime, Color), 1);
-        
-        
         Color.rgb = lerp(1, Color, ColorIntensity).rgb;
         
         depthColors[i] = float4(CalcColorCoefByDistance(hitTime, lerp(Color, 1, lerp(0, (refractionColors3[i].r + refractionColors3[i].g + refractionColors3[i].b) / 2, lighttransmission))), 1);
-        
-        
-   //     refractionColors2[i].r = SampleEnvironment(refractionRay + DispersionR).r;
-  //      refractionColors2[i].g = SampleEnvironment(refractionRay + DispersionG).g;
-  //      refractionColors2[i].b = SampleEnvironment(refractionRay + DispersionB).b;
-        
-   //     refractionColors[i].b = SampleEnvironment(normalize(refractionRay) - DispersionR).b;
-   //     refractionColors[i].r = SampleEnvironment(normalize(refractionRay) - DispersionG).r;
-  //      refractionColors[i].g = SampleEnvironment(normalize(refractionRay) - DispersionB).g;
-        
-        
-       
-    ////    refractionColors2[i] = DispersionR * PlaneNull;
-        
+
         refractionColors2[i] = clamp(lerp(refractionColors3[i], refractionColors2[i], DispersionIntensity),0,1); 
-        
-        
-     //   refractionColors2[i] = PlaneNull;
-        
-     //   refractionColors2[i] = refractionColors2[i] * (PlaneNull);
+
         float CLR = refractionRay.x;
         
         if (CLR < 0)
@@ -606,51 +447,10 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
 
         }
         
-    //    refractionColors2[i] = PlaneNull;
-        
-     //   refractionColors2[i] = float4(CLR, 1, 1, 1);
-        
-     //   refractionColors2[i] = float4(refractionRay + 1, 1);
-        
-        
-    //    refractionColors2[i] = refractionColors2[i] *  depth2;
-        
-        
-  //      refractionColors2[i] = (refractionColors2[i] + refractionColors[i]) / 2;
-        
-        
-        refractionColors[i] = SampleEnvironment(refractionRay);
-        
-        
-   /*     DispersionR = DispersionR / (tmpRayDirection - Depth_) ;
-        DispersionG = DispersionG / (tmpRayDirection - Depth_);
-        DispersionB = DispersionB / (tmpRayDirection - Depth_) ; */
-        
+        refractionColors[i] = SampleEnvironment(refractionRay);        
         
         float DispRandom = pow(random(hitPlane.xy),0.1);
-        
-     //   DispRandom = 1;
-        
-        float3 DirDisp = clamp(tmpRayStart.rgb,-1,1);
-  
-        
-    //   refractionColors2[i] = 0;
-
-        
-        
-  //      refractionColors2[i] = (refractionColors2[i] + refractionColors[i]) / 2;
-        
-        
-   //     refractionColors[i] = SampleEnvironment(refractionRay);
-        
-        
-        
-    /*    refractionColors2[i].r = SampleEnvironment(refractionRay + (reflectionRay * Dispersion * 1.5));
-        refractionColors2[i].g = SampleEnvironment(refractionRay + (reflectionRay * Dispersion * 1.7));
-        refractionColors2[i].b = SampleEnvironment(refractionRay + (reflectionRay * Dispersion * 1.9));
- */
-					
-					
+        float3 DirDisp = clamp(tmpRayStart.rgb,-1,1);					
 
         if (i == loopCount - 1)
         {
@@ -664,163 +464,19 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
 				
     float4 tmpReflectionColor = float4(0, 0, 0, 0);
 				
-				// reverse calc
     for (int j = loopCount - 1; j >= 0; --j)
     {
-        
-     
-   //     tmpReflectionColor = (0.2 + tmpReflectionColor) / 1.2;
         float4 refractionColors_;
-        
-       
-        /*
-       
-        if (j > 1)
-        {
-            refractionColors_ = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j];
-        }
-        else
-        {
-            
-            refractionColors_ = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j];
-            
-
-        }
-        */
-      
-
-   //     refractionColors_ = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j];
-
-       
      
-        tmpReflectionColor = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j];
-        
-				
-     //   tmpReflectionColor = max(tmpReflectionColor, lerp(refractionColors2[j], tmpReflectionColor, reflectionRates2[j]) * depthColors[j]);
-        
-        
-     //   refractionColors_ = tmpReflectionColor;
-        
-        
-        
-    //     float4 refractionColors_ = lerp(refractionColors[j], tmpReflectionColor, lerp(reflectionRates[j],0.5,0)) * depthColors[j];
-        
-        
-        
-        
-    //    refractionColors_ = (refractionColors_ + tmpReflectionColor)/2; ======================================
-
-     //   refractionColors_ = (reflectionRates[j] * 6);
-        
-        
-      //  refractionColors_ = refractionColors[j];
-        
-       // tmpReflectionColor.r = lerp(tmpReflectionColor.r, pow(tmpReflectionColor.r, tmpReflectionColor.r * 2), tmpReflectionColor.r );
-        
-        
-        
-      
-        
-       // refractionColors_ = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j];
-        
-        
-      //  DispersionIntensity =  DispersionIntensity;
-        
-      //  DispersionIntensity = pow(refractionColors_,DispersionIntensity);
-        
-        
-     //   refractionColors_ = lerp(refractionColors_, (lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j] + tmpReflectionColor) / 2, DispersionIntensity);
-        
-        
-        
-        
-        
-        /*
-        if (j > 1)
-        {
-            refractionColors_ = lerp(refractionColors_, (lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j] + tmpReflectionColor) / 2, DispersionIntensity);
-        }
-        else
-        {
-            refractionColors_ = lerp(refractionColors_, (lerp(refractionColors3[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j] + tmpReflectionColor) / 2, DispersionIntensity);
-        }
-        */
-        
-        
-        tmpReflectionColor = pow(tmpReflectionColor * Brightness, Power);
-     
-     //    refractionColors_ = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j] * depthColors[j]);
-        
-        
-        
-      //  refractionColors_ = tmpReflectionColor;
-        
-     //   refractionColors_ = float4(tmpRayStart, 1);
-        /*
-        if (Prism_ == 0)
-        {
-            
-            refractionColors_ = lerp(refractionColors_,lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j],DispersionIntensity);
-            
-        }
-        */
-    //    tmpReflectionColor = refractionColors_;
-        /*
-        if (Prism_ == 0 && tmpReflectionColor.r > 0.8 && tmpReflectionColor.g < 0.99)
-        {
-            float3 oldColor = tmpReflectionColor.rgb;
-            float3 tmpReflectionColor2;
-            
-            tmpReflectionColor.r = pow(tmpReflectionColor.r, tmpRayStart.r * tmpReflectionColor.r);
-            tmpReflectionColor.g = pow(tmpReflectionColor.g, tmpRayStart.g * tmpReflectionColor.g);
-            tmpReflectionColor.b = pow(tmpReflectionColor.b, tmpRayStart.b * tmpReflectionColor.b);
-            
-            
-            tmpReflectionColor2.r = pow(tmpReflectionColor.r, tmpRayStart.r * oldColor.b);
-            tmpReflectionColor2.g = pow(tmpReflectionColor.g, tmpRayStart.g * oldColor.r);
-            tmpReflectionColor2.b = pow(tmpReflectionColor.b, tmpRayStart.b * oldColor.g);
-            
-            tmpReflectionColor.rgb = pow(lerp(tmpReflectionColor.rgb, tmpReflectionColor2, oldColor.r), 10);
-            
-           tmpReflectionColor.rgb = lerp(oldColor, tmpReflectionColor.rgb, 5);
-            
-            
-            /*
-            tmpReflectionColor.r = pow(tmpReflectionColor.r, tmpReflectionColor.r * 2) ;
-            tmpReflectionColor.g = pow(tmpReflectionColor.g, tmpReflectionColor.g * 3) ;
-            tmpReflectionColor.b = pow(tmpReflectionColor.b, tmpReflectionColor.b * 4) ;
-            
-    }
-        */
-        
-        
-      /*  if (Prism_ < 0.97)
-        {
-        
-        tmpReflectionColor.r = pow(tmpReflectionColor.r, tmpReflectionColor.r * 2);
-            tmpReflectionColor.g = pow(tmpReflectionColor.g, tmpReflectionColor.g * 2.72);
-            tmpReflectionColor.b = pow(tmpReflectionColor.b, tmpReflectionColor.b * 4.4);
-        }
-        */
-        
-        
-       /* if (reflectionRates[j].r < 0.1)
-        {
-            tmpReflectionColor = float4(1, 0, 0, 1);
-
-        }*/
-
-        
-        
-    //    Prism_ = depthColors[j].b;
-        
+        tmpReflectionColor = lerp(refractionColors2[j], tmpReflectionColor, reflectionRates[j]) * depthColors[j];        
+        tmpReflectionColor = pow(tmpReflectionColor * Brightness, Power);        
     }
 				
 	if (badRay > 0)
 	{
 		return float4(1, 0, 0, 1);
 	}
-// return float4(Prism_.xxx, 1);
+
 	return tmpReflectionColor;
 }
 
@@ -843,39 +499,16 @@ float4 ToneMap(float4 MainColor, float brightness, float Disaturate, float _max,
     output.x = clamp(Remap(output.x, 0, 1, _min, lerp(_max, 1, 0.5)), 0, 1.5);
     output.y = clamp(Remap(output.y, 0, 1, _min, lerp(_max, 1, 0.5)), 0, 1.5);
     output.z = clamp(Remap(output.z, 0, 1, _min, lerp(_max, 1, 0.5)), 0, 1.5);
-				
-			//	output = CalculateContrast(clamp(1 - pow((output.x + output.y + output.z) / 3, 1),0,1) * 2, output);
-
-				
-
-
-
-					
-
 
     output = pow(output, contrast);
-				
-				//output = lerp(output * (1 - pow(disatur,2)), output, 1 * lerp(max,1,0.3) );
-
-					
-
-				//output = lerp(output, output - 0.5,  _Middle *  clamp( distance(0.8, disatur), 0, 1));
 
     output = lerp(clamp(output, 0, _max), output, pow(_max, 4));
 
-
-
     output = lerp(smoothstep(output, -0.1, 0.25), output, (1 - distance(1, _max) * 2));
-
 				
     output = lerp(dot(output, float3(0.299, 0.587, 0.114)), output, Satur);
 
     output = output * lerp(brightness, 1, 0.75);
 
-
-
-
     return output;
-
-
 }
