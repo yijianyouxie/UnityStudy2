@@ -187,6 +187,7 @@ namespace DiamondRender
 
             m = MR.worldToLocalMatrix;
 
+            //这三个分量代表平移，所以将所有点都平移，减去中心点
             m.m03 -= CentreModel.x;
             m.m13 -= CentreModel.y;
             m.m23 -= CentreModel.z;
@@ -582,6 +583,7 @@ namespace DiamondRender
             //Vector3.Dot(position, normal)这一句的几何意义是两个向量的长度乘以两个向量的cos值，因为position的最大值是in_scale
             //cos值的最大值也是1，所以这个a值的最大值是1
             //Vector3.Dot(position, normal)表示的是顶点的本地坐标在法线方向上的投影长度
+            //这个.a表示的是沿着法线方向，此平面距离原点的距离
             retval.a = Vector3.Dot(position, normal) / in_scale;//顶点本地坐标和法线的点积除以缩放值
 
             if (retval.a < 0 || retval.a > 1.0f)

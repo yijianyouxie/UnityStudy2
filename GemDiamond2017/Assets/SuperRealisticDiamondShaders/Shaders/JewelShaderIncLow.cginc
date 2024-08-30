@@ -230,7 +230,7 @@ fixed CheckCollideRayWithPlane(fixed3 rayStart, fixed3 rayNormalized, fixed4 nor
 			}
 
 
-void CollideRayWithPlane(fixed3 Pos, fixed PassCount, fixed3 rayNormalized, fixed4 TriangleNormal, fixed startSideRelativeRefraction, out fixed reflectionRate, out fixed reflectionRate2, out fixed3 reflection, out fixed3 refraction, out fixed HorizontalElementSquared)
+void CollideRayWithPlane(fixed PassCount, fixed3 rayNormalized, fixed4 TriangleNormal, fixed startSideRelativeRefraction, out fixed reflectionRate, out fixed reflectionRate2, out fixed3 reflection, out fixed3 refraction, out fixed HorizontalElementSquared)
 			{
     fixed3 rayVertical = dot(TriangleNormal.xyz, rayNormalized) * TriangleNormal.xyz;
 				reflection = rayNormalized - rayVertical*2.0;
@@ -471,7 +471,7 @@ fixed4 GetColorByRay(fixed3 rayStart, fixed3 rayDirection, fixed refractiveIndex
         }
         
         
-        CollideRayWithPlane(rayStart, i_Pass, tmpRayDirection, hitPlane, refractiveIndex, reflectionRate,reflectionRate2, reflectionRay, refractionRay, PlaneNull);
+        CollideRayWithPlane(i_Pass, tmpRayDirection, hitPlane, refractiveIndex, reflectionRate,reflectionRate2, reflectionRay, refractionRay, PlaneNull);
 		
         reflectionRates[i] = reflectionRate;
         

@@ -1,8 +1,4 @@
 ﻿// Upgrade NOTE: replaced 'UNITY_PASS_TEXCUBE(unity_SpecCube1)' with 'UNITY_PASS_TEXCUBE_SAMPLER(unity_SpecCube1,unity_SpecCube0)'
-
-
-float Test_;
-
 struct appdata
 {
 	float4 vertex : POSITION;
@@ -63,6 +59,8 @@ v2f vert (appdata v)
 	//得到了一个相对于中心点的一个本地坐标
 	//其实是得到相对于轴心点的位置，因为后边的摄像机的位置也是根据模型的轴心点来的。
 	//摄像机变换到模型本地的矩阵中和这里都减去了CentreModel，是不是也可以都不减去呢
+	//这里的这个变换是必须的，目的是将模型的轴心点放到模型的正中心内部
+	//然后让所有计算出来的pos都是相对于这个中心点的。估计如果模型本身制作的时候，中心点就是在正儿八经的中心点，这一步是可以省略的吧。
     pos.xyz = (pos.xyz - CentreModel.xyz);
     
     o.vertex = UnityObjectToClipPos(pos);
@@ -78,9 +76,9 @@ v2f vert (appdata v)
     o.Pos2 = cameraLocalPos;
     o.vertex = UnityObjectToClipPos(v.vertex);
 	o.uv = v.uv;
-	//Pos就是相对于中心点的本地坐标
+	//Pos就是相对于中心点的本地坐标，也可以认为是模型空间中顶点坐标了
     o.Pos = float4(pos.xyz, 1);
-				o.Normal = v.normal;
+	o.Normal = v.normal;
     o.Color = v.Color;
     o.id = v.id;
     o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
@@ -129,7 +127,9 @@ float random(float2 st)
 }
 
 
-
+//计算反射率
+//borderDot dot值的临界值.折射率越大，这个值越大。
+//折射率越大，光线与法线的夹角不用太大就容易发生全反射了。
 float CalcReflectionRate(float3 normal, float3 ray, float baseReflection, float borderDot)
 {
     float normalizedDot = clamp((abs(dot(normal, ray)) - borderDot) / (1.0 - borderDot), 0.0, 1.0);
@@ -176,8 +176,9 @@ float4 GetUnpackedPlaneByIndex(uint index)
 	return float4(normal, packedPlane.w*_Scale);//a的数值表示：顶点的本地坐标在法线方向上的投影长度
 }
 
-//--rayStart 相对于几何中心点的本地坐标
+//--rayStart 相对于几何中心点的本地坐标。rayStart会往前步进。
 //--rayDirection 折射方向
+//--这个函数检测一条射线是否与一个面发生碰撞，如果碰撞了，会返回射线起始点与碰撞点的距离
 float CheckCollideRayWithPlane(float3 rayStart, float3 rayNormalized, float4 normalTriangle) // plane - normal.xyz и normal.w - distance
 {
 	//计算折射方向和法线方向的点积,也就是折射方向在法线方向上的投影长度
@@ -208,7 +209,7 @@ float CheckCollideRayWithPlane(float3 rayStart, float3 rayNormalized, float4 nor
 /*
 --Pos 相对于几何中心点的本地坐标
 --PassCount
---rayNormalized 摄像机指向顶点的向量
+--rayNormalized 摄像机指向顶点的向量 其实是一个指向模型内部的向量
 --TriangleNormal 三角面的发现
 --startSideRelativeRefraction 起始侧的相对折射
 --reflectionRate 反射率
@@ -217,9 +218,10 @@ float CheckCollideRayWithPlane(float3 rayStart, float3 rayNormalized, float4 nor
 --refraction 折射方向
 --HorizontalElementSquared 
 */
-void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, float4 TriangleNormal, 
+//--返回反射和折射方向
+void CollideRayWithPlane(float PassCount, float3 rayNormalized, float4 TriangleNormal, 
 						float startSideRelativeRefraction, out float reflectionRate, 
-						out float reflectionRate2, out float3 reflection, out float3 refraction, out float HorizontalElementSquared)
+						/*out float reflectionRate2,*/ out float3 reflection, out float3 refraction, out float HorizontalElementSquared)
 {
 	//垂直于三角面的射线
     float3 rayVertical = dot(TriangleNormal.xyz, rayNormalized) * TriangleNormal.xyz;
@@ -248,6 +250,7 @@ void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, floa
     
     HorizontalElementSquared = 0;
     
+	//HorizontalElementSquared的值设定为/3,用在下边的光的弥散效果中，控制差值的程度
     HorizontalElementSquared = horizontalElementSquared /3;
     if (horizontalElementSquared >= TotalInternalReflection)  
 	{
@@ -255,7 +258,7 @@ void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, floa
         
         
 		reflectionRate = 1.0;
-        reflectionRate2 = 1.0;
+        //reflectionRate2 = 1.0;
         refraction = TriangleNormal.xyz;
 
 		return;
@@ -270,16 +273,16 @@ void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, floa
     
     reflectionRate = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection * PassCount, borderDot);
 
-    reflectionRate2 = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection * PassCount, borderDot);    
+    //reflectionRate2 = CalcReflectionRate(rayNormalized, TriangleNormal.xyz, _BaseReflection * PassCount, borderDot);    
 	return;
 }
-
+//根据距离计算颜色
 float3 CalcColorCoefByDistance(float distance,float4 Color)
 {
 
     return lerp(pow(max(Color.xyz, 0.01), distance * Color.w), Color.rgb, ColorByDepth);
 }
-
+//采样环境贴图
 float4 SampleEnvironment(float3 rayLocal)
 {
 	float3 rayWorld = mul(unity_ObjectToWorld, float4(rayLocal, 0));
@@ -299,8 +302,10 @@ float4 SampleEnvironment(float3 rayLocal)
 #endif
 }
 
-//--rayStart 相对于几何中心点的本地坐标
+//--rayStart 相对于几何中心点的本地坐标。rayStart会往前步进
 //--rayDirection 折射方向
+//--hitPanel 返回射线碰撞到的面
+//--hitTime 射线和碰撞到的面的距离
 void CheckCollideRayWithAllPlanes(float3 rayStart, float3 rayDirection, out float4 hitPlane, out float hitTime)
 {
 	hitTime=1000000.0;
@@ -315,6 +320,7 @@ void CheckCollideRayWithAllPlanes(float3 rayStart, float3 rayDirection, out floa
 
 		if(tmpTime >= -0.001 && tmpTime<hitTime)
 		{
+			//这里是不是找到一个就行啊，不用把循环都跑完吧
 			hitTime = tmpTime;
 			hitPlane = plane;
 		}
@@ -331,11 +337,11 @@ void CheckCollideRayWithAllPlanes(float3 rayStart, float3 rayDirection, out floa
 float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex, int MaxReflection, float4 Color, float lighttransmission)
 {
 	float3 tmpRayStart = rayStart;
-	float3 tmpRayDirection = rayDirection;
+	float3 tmpRayDirection = rayDirection;//这里是摄像方向，但是到了钻石内部了
 
 	//定义反射和折射数组，最大长度是10
 	float reflectionRates[MAX_REFLECTION];
-    float reflectionRates2[MAX_REFLECTION];
+    //float reflectionRates2[MAX_REFLECTION];
 	float4 refractionColors[MAX_REFLECTION];
     float4 refractionColors2[MAX_REFLECTION];
     float4 refractionColors3[MAX_REFLECTION];
@@ -364,50 +370,51 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
 		float3 rayEnd = tmpRayStart + tmpRayDirection*hitTime;
 								
 		float reflectionRate;
-        float reflectionRate2;
+        //float reflectionRate2;
 		float3 reflectionRay;
 		float3 refractionRay;
         float PlaneNull;
 
         float i_Pass = i;
-        
+        //大于两次之后，完全使用菲涅尔
         if (i_Pass >= 2)
         {
             i_Pass = 0;
 
         }
-        
+        //前两次使用基础反射率
         if (i_Pass < 2)
         {
             i_Pass = 1;
 
         }
         
-        
-        CollideRayWithPlane(rayStart, i_Pass, tmpRayDirection, hitPlane, refractiveIndex, reflectionRate,reflectionRate2, reflectionRay, refractionRay, PlaneNull);
-		
+		//根据上边返回的碰撞面，返回反射率、反射和折射方向
+        CollideRayWithPlane(i_Pass, tmpRayDirection, hitPlane, refractiveIndex, reflectionRate,/*reflectionRate2,*/ reflectionRay, refractionRay, PlaneNull);
+		//每一次循环中按照找到的碰撞到的面，根据这个面计算一个反射率。
         reflectionRates[i] = reflectionRate;
         
-        reflectionRates2[i] = reflectionRate2;
+        //reflectionRates2[i] = reflectionRate2;
         
-        float Disp = pow(Dispersion , 2);
+        /*float Disp = pow(Dispersion , 2);
         
-        float dispPow =  Dispersion * 0.4;
+        float dispPow =  Dispersion * 0.4;*/
  
-        float depth2 = Remap(i, 0, loopCount, 0, 1);        
+        /*float depth2 = Remap(i, 0, loopCount, 0, 1);        
         
         depth2 = clamp(depth2, 0.0001, 1);
         
-        depth2 = 1;
+        depth2 = 1;*/
  
-        //世界空间下，由此点到摄像机的方向（参数应该是世界坐标，但是rayStart这个是本地坐标啊）
-        float3 _worldViewDir = UnityWorldSpaceViewDir(rayStart.xyz);
-        _worldViewDir = normalize(_worldViewDir);//归一化
+        ////世界空间下，由此点到摄像机的方向（参数应该是世界坐标，但是rayStart这个是本地坐标啊）
+        //float3 _worldViewDir = UnityWorldSpaceViewDir(rayStart.xyz);
+        //_worldViewDir = normalize(_worldViewDir);//归一化
 
-        float fresnelNdotV5 = dot(tmpRayStart, _worldViewDir);
-        float fresnelNode5 = (FresnelDispersionScale * pow(1.0 - fresnelNdotV5, FresnelDispersionPower));
-        
-        fresnelNode5 = 1;//这里强制为1了；上面计算的作废，也就是没有用到
+        //float fresnelNdotV5 = dot(tmpRayStart, _worldViewDir);
+        //float fresnelNode5 = (FresnelDispersionScale * pow(1.0 - fresnelNdotV5, FresnelDispersionPower));
+        //
+        //fresnelNode5 = 1;//这里强制为1了；上面计算的作废，也就是没有用到
+		float fresnelNode5 = 1;
         
         DispersionR = DispersionR * Dispersion * fresnelNode5;
         DispersionG = DispersionG * Dispersion * fresnelNode5;
@@ -420,11 +427,12 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
 
         float3 DispersionRay_b = lerp(refractionRay, lerp(rayEnd, refractionRay, 2), DispersionB * PlaneNull);
 
-        float Depth_ = depthColors[i];
+        /*float Depth_ = depthColors[i];
         
-        Depth_ = Remap(Depth_, 0.997, 0.999, 1, 0);
+        Depth_ = Remap(Depth_, 0.997, 0.999, 1, 0);*/
         
-        
+        //每次根据折射方向去采样环境球，计算出一个折射颜色。这里的折射方向就是指从钻石内部折射到空气中的折射方向了
+		//所以拿这个方向去采样环境球
         refractionColors3[i] = SampleEnvironment(refractionRay);
         
         refractionColors2[i] = 1;
@@ -449,17 +457,18 @@ float4 GetColorByRay(float3 rayStart, float3 rayDirection, float refractiveIndex
         
         refractionColors[i] = SampleEnvironment(refractionRay);        
         
-        float DispRandom = pow(random(hitPlane.xy),0.1);
-        float3 DirDisp = clamp(tmpRayStart.rgb,-1,1);					
+        /*float DispRandom = pow(random(hitPlane.xy),0.1);
+        float3 DirDisp = clamp(tmpRayStart.rgb,-1,1);*/					
 
         if (i == loopCount - 1)
         {
             reflectionRates[i] = 0.0;
-            reflectionRates2[i] = 0.0;
+            //reflectionRates2[i] = 0.0;
         }
 
+		//计算新的光线发射点和发射方向
         tmpRayStart = tmpRayStart + tmpRayDirection * hitTime;
-        tmpRayDirection = reflectionRay;
+        tmpRayDirection = reflectionRay;//返回的这个就是钻石内部的反射方向了。
     }
 				
     float4 tmpReflectionColor = float4(0, 0, 0, 0);

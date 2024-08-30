@@ -185,7 +185,7 @@ namespace DiamondRender
 
 
             m = MR.worldToLocalMatrix;
-
+            //平移部分也进行了相对于模型的轴心点的变换
             m.m03 -= CentreModel.x;
             m.m13 -= CentreModel.y;
             m.m23 -= CentreModel.z;

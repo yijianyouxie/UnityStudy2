@@ -15,115 +15,86 @@ Shader "Diamonds/DiamondShader" {
 
 		_RefractiveIndex("RefractiveIndex", Range(1,5)) = 1.5
 
-	 [KeywordEnum( CubeMap, ReflectionProbe)] _CubeMapMode("CubeMapMode", Float) = 0
+		[KeywordEnum( CubeMap, ReflectionProbe)] _CubeMapMode("CubeMapMode", Float) = 0
 		_BaseReflection("BaseReflection", Range(0,1)) = 0.5
-			Dispersion("Dispersion", Range(0,2)) = 1.2
-			[Space(10)]
-			DispersionR("DispersionR", Range(-0.5,1)) = 0.68
-			DispersionG("DispersionG", Range(-0.5,1)) = 0.4
-			DispersionB("DispersionB", Range(-0.5,1)) = 0.146
+		Dispersion("Dispersion", Range(0,2)) = 1.2
+		[Space(10)]
+		DispersionR("DispersionR", Range(-0.5,1)) = 0.68
+		DispersionG("DispersionG", Range(-0.5,1)) = 0.4
+		DispersionB("DispersionB", Range(-0.5,1)) = 0.146
 
-				//
-	//	FresnelDispersionPower("FresnelDispersionPower", Range(-0.5,5)) = 1.5
-				//	FresnelDispersionScale("FresnelDispersionScale", Range(-1.5,5)) = 1.5
-
-			[Space(10)]
-			DispersionIntensity("DispersionIntensity", Range(0,10)) = 1
+		[Space(10)]
+		DispersionIntensity("DispersionIntensity", Range(0,10)) = 1
 				 
-			TotalInternalReflection("TotalInternalReflection", Range(0,2)) = 1
-			Spec("specular",Range(0,10)) = 1
-				//	DispersionLimitedAngle("DispersionLimitedAngle",Range(0,2)) = 0
-			//	DispersionHueHandler("DispersionHueHandler",Range(0,2)) = 0.5
-				//	lightEstimation("lightEstimation", Float) = 0.4
+		TotalInternalReflection("TotalInternalReflection", Range(0,2)) = 1
+		Spec("specular",Range(0,10)) = 1
+
+		[Space(20)]
+		//_Scale("Scale", Float) = 1
 				
-			//	FixedlightEstimation("FixedlightEstimation", Float) = 0.8
+		Brightness("Brightness",Range(0,2)) = 1
+		Power("Power",Range(0,2)) = 1
+		Contrast("Contrast",Range(0,2)) = 1
+		_Disaturate("_Disaturate",Range(0,2)) = 1
+		_Min("Min",Range(-1,1)) = 0
+		_Max("Max",Range(0,2)) = 1
+		PostExposure("PostExposure",Float) = 1
 
-				[Space(20)]
-			//_Scale("Scale", Float) = 1
-				
-				Brightness("Brightness",Range(0,2)) = 1
-				Power("Power",Range(0,2)) = 1
-				Contrast("Contrast",Range(0,2)) = 1
-					_Disaturate("_Disaturate",Range(0,2)) = 1
-				_Min("Min",Range(-1,1)) = 0
-				_Max("Max",Range(0,2)) = 1
-					PostExposure("PostExposure",Float) = 1
-
-				//	ID_("INt",Float) = 1
-
-				//		CentreIntensity("CentreIntensity",Range(0,1)) = 0
-
-				ReflectionCube("ReflectionCube", CUBE) = "black" {}
-			NormalMap("NormalMap", 2D) = "bump" {}
-			_Specular("SpecularMap", 2D) = "white" {}
-			DifuseMask("ReflectionMask", 2D) = "black" {}
+		ReflectionCube("ReflectionCube", CUBE) = "black" {}
+		NormalMap("NormalMap", 2D) = "bump" {}
+		_Specular("SpecularMap", 2D) = "white" {}
+		DifuseMask("ReflectionMask", 2D) = "black" {}
 	}
-		SubShader{
+	SubShader{
 
-				Tags { "RenderType" = "Jewel" }
-				LOD 200
+		Tags { "RenderType" = "Jewel" }
+		LOD 200
 
 		Pass
-			{
-				CGPROGRAM
-				// Upgrade NOTE: excluded shader from OpenGL ES 2.0 because it uses non-square matrices
-				#pragma exclude_renderers gles
-
-
-				#pragma multi_compile _CUBEMAPMODE_CUBEMAP  _CUBEMAPMODE_REFLECTIONPROBE
-
-
-							#pragma vertex vert
-							#pragma fragment frag
-							#include "UnityCG.cginc"
-							#include "JewelShaderInc.cginc"
-				#include "Lighting.cginc"
-
-
-		sampler2D DifuseMask;
-	uniform float4 DifuseMask_ST;
-				sampler2D _Specular;
-	float4 _Specular_ST;
-		uniform float4 NormalMap_ST;
-		uniform sampler2D NormalMap;
-			 float  Spec;
-		sampler2D _Pos;
-		float Reflection;
-		float Contrast;
-		float PostExposure;
-		float _Min;
-		float _Max;
-		float _Disaturate;
-		float DispersionHueHandler;
-		//	float lightEstimation;
-		float ID_;
-		float FresnelPower;
-		float FresnelScale;
-		 float ior_r = 2.408;
-		 float ior_g = 2.424;
-		 float ior_b = 2.432;
-		 float4 _Color;
-		 float lighttransmission;
-
-		fixed4 frag(v2f i) : SV_Target
 		{
-			float3 cameraLocalPos;
-		 
-		//	cameraLocalPos = lerp(_WorldSpaceCameraPos,mul(MatrixWorldToObject, float4(_WorldSpaceCameraPos, 1)), CentreIntensity);
+			CGPROGRAM
+			// Upgrade NOTE: excluded shader from OpenGL ES 2.0 because it uses non-square matrices
+			#pragma exclude_renderers gles
+			#pragma multi_compile _CUBEMAPMODE_CUBEMAP  _CUBEMAPMODE_REFLECTIONPROBE
 
-				//	 cameraLocalPos = mul(unity_WorldToObject, float4(cameraLocalPos,1));
+			#pragma vertex vert
+			#pragma fragment frag
+			#include "UnityCG.cginc"
+			#include "JewelShaderInc.cginc"
+			#include "Lighting.cginc"
 
-				 //	 cameraLocalPos = mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1));
+			sampler2D DifuseMask;
+			uniform float4 DifuseMask_ST;
+			sampler2D _Specular;
+			float4 _Specular_ST;
+			uniform float4 NormalMap_ST;
+			uniform sampler2D NormalMap;
+			float  Spec;
+			sampler2D _Pos;
+			float Reflection;
+			float Contrast;
+			float PostExposure;
+			float _Min;
+			float _Max;
+			float _Disaturate;
+			float DispersionHueHandler;
+			//	float lightEstimation;
+			float ID_;
+			float FresnelPower;
+			float FresnelScale;
+			float ior_r = 2.408;
+			float ior_g = 2.424;
+			float ior_b = 2.432;
+			float4 _Color;
+			float lighttransmission;
+
+			fixed4 frag(v2f i) : SV_Target
+			{
+				float3 cameraLocalPos;
 				
-				 cameraLocalPos = i.Pos2;
+				cameraLocalPos = i.Pos2;
 
 				float3 pos = i.Pos;
-
-			//	pos = lerp(pos, (pos + CentrePivotDiamond2.xyz), CentreIntensity);
-
-				//
-
-				
 				//获得从摄像机指向顶点的向量
 				float3 localRay = normalize(pos - cameraLocalPos) ;
 
@@ -131,7 +102,7 @@ Shader "Diamonds/DiamondShader" {
 				float4 plane = float4(normal, dot(pos, normal));
 
 				float reflectionRate = 0;
-				float reflectionRate2 = 0;
+				//float reflectionRate2 = 0;
 				float3 reflectionRay;
 				float3 refractionRay;
 								
@@ -147,12 +118,12 @@ Shader "Diamonds/DiamondShader" {
 				--TriangleNormal 三角面的发现
 				--startSideRelativeRefraction 起始侧的相对折射
 				--reflectionRate 反射率
-				--reflectionRate2 反射率2
-				--reflectionRay 反射方向
+				--reflectionRate2 反射率2 【没有用到】
+				--reflectionRay 反射方向 【没有用到】
 				--refractionRay 折射方向
 				--HorizontalElementSquared
 				*/
-				CollideRayWithPlane(pos,0,localRay, plane, 1.0/tmpR, reflectionRate, reflectionRate2, reflectionRay, refractionRay, PlaneNull);
+				CollideRayWithPlane(0,localRay, plane, 1.0/tmpR, reflectionRate, /*reflectionRate2,*/ reflectionRay, refractionRay, PlaneNull);
 
 				/*
 				--pos 相对于几何中心点的本地坐标
@@ -164,46 +135,16 @@ Shader "Diamonds/DiamondShader" {
 				//获得折射颜色
 				float4 refractionColor = GetColorByRay(pos, refractionRay, tmpR, 0, _Color, lighttransmission);
 				refractionColor.w = 1.0;
-
-			
-
-
-				//	lightEstimation = Remap(lightEstimation, 0.05, 0.4, 0, 1);
-
-			//	refractionColor = refractionColor * (1 + lightEstimation) / 2;
-
-
-				//	refractionColor.rgb = refractionColor * (_LightColor0.rgb * _LightColor0.a);
-
-
-				
-
-				//float4 reflectionColor = max(texCUBE(_Environment, reflectionRay) * Spec, 2);
-
-			//	float4 reflectionColor = pow(texCUBE(ReflectionCube, reflectionRay) * Spec * (1 + lightEstimation) / 2, 1);
 				//世界空间的从点指向摄像机方向
 				float3 _worldViewDir = UnityWorldSpaceViewDir(i.worldPos);
 				_worldViewDir = normalize(_worldViewDir);
 				//计算菲涅尔
 				float fresnelNdotV5 = dot(normal, _worldViewDir);
 				float fresnelNode5 = (1 * pow(1.0 - fresnelNdotV5,1));
-
-
-				//			float4 reflectionColor = clamp((texCUBE(ReflectionCube, reflectionRay) * Spec ) * fresnelNode5,0,1) * (1 + lightEstimation) / 2;
-
-
-			//	float3 ase_worldNormal = i.ase_texcoord1.xyz;
-			//	float3 ase_worldViewDir = UnityWorldSpaceViewDir(WorldPosition);
-			//	ase_worldViewDir = normalize(ase_worldViewDir);
 				//世界空间的反射
 				//实际没有用到，实际用的是通过法线贴图算出来的
-				float3 _worldReflection = reflect(-_worldViewDir, normal);
-
-
-				
-
-
-
+				//float3 _worldReflection = reflect(-_worldViewDir, normal);
+				//这里用到切线空间到世界空间是为了解析法线贴图
 				float3 _worldTangent = i.tangent.xyz;
 				float3 _worldNormal = i.WorldNormal.xyz;
 				float3 _worldBitangent = i.WorldBitangent.xyz;
@@ -212,7 +153,7 @@ Shader "Diamonds/DiamondShader" {
 				float3 tanToWorld2 = float3(_worldTangent.z, _worldBitangent.z, _worldNormal.z);
 
 				float2 uvNormal = i.uv * NormalMap_ST.xy + NormalMap_ST.zw;
-				//世界空间的反射
+				//世界空间的反射，这里采样的代码有三个相同的，可以先一次采样出来，然后在后边使用
 				float3 worldRefl3 = reflect(-_worldViewDir, float3(dot(tanToWorld0, UnpackNormal(tex2D(NormalMap, uvNormal))), dot(tanToWorld1, UnpackNormal(tex2D(NormalMap, uvNormal))), dot(tanToWorld2, UnpackNormal(tex2D(NormalMap, uvNormal)))));
 
 				//高光贴图算高光
@@ -220,17 +161,6 @@ Shader "Diamonds/DiamondShader" {
 
 				//反射颜色。根据反射立方体计算得出
 				float4 reflectionColor = texCUBE(ReflectionCube, worldRefl3) * spec_ * fresnelNode5;
-
-				////////////	float4 reflectionColor = clamp((texCUBE(ReflectionCube, reflectionRay) * Spec) * fresnelNode5, 0, 1) ;
-
-				//float4 reflectionColor = max(texCUBE(_Environment, reflectionRay) * Spec, 2);
-
-			//	return tex2D(NormalMap, i.uv);
-				
-				//	return i.Color; 
-			//	return float4(vertNormal, 1);
-			//	return tex2D(_Pos,i.uv);
-				//return reflectionColor;
 				 
 				//获取色调，色相，但是这个后面没有用到
 				float Hue = rgb2hsv(refractionColor.rgb).r;
@@ -239,43 +169,12 @@ Shader "Diamonds/DiamondShader" {
 				//根据高光的mask贴图，决定读取折射还是反射
 				refractionColor = lerp(refractionColor, reflectionColor, tex2D(DifuseMask, i.uv * DifuseMask_ST.xy + DifuseMask_ST.zw));
 
-				
-			//	refractionColor.rgb = lerp(refractionColor.rgb, Dis, Hue * DispersionHueHandler);
-
 				float4 Fin = lerp(reflectionColor,  refractionColor * (1.0 - reflectionRate), 1 - reflectionColor);
 
 				Fin = refractionColor + reflectionColor;
-
-				//	float4 Fin = lerp(reflectionColor, refractionColor * , 1 - reflectionColor);
-
-			//	return reflectionColor;
-
-				/*
-				if (Fin.r > 0.9) {
-					Fin.rgb = Fin.rgb * 10;
-				}
-
-				if (Fin.g > 0.9) {
-					Fin.rgb = Fin.rgb * 10;
-				}
-
-				if (Fin.b > 0.9) {
-					Fin.rgb = Fin.rgb * 10;
-				}
-				*/
-
-				//		Fin = max(reflectionRate + refractionColor * (1.0 - reflectionRate), reflectionColor);
-
-				//	Fin = max(reflectionRate + refractionColor * (1.0 - reflectionRate), reflectionColor);
-
-				//Fin = reflectionRate;
-
-				//	Fin = refractionColor;
 				//tongMap
 				Fin = ToneMap(Fin, PostExposure, _Disaturate, _Max, _Min, Contrast, 1);
 				
-
-				
 				if (Fin.r > 1) {
 					Fin.rgb = Fin.rgb * 2;
 				}
@@ -286,54 +185,17 @@ Shader "Diamonds/DiamondShader" {
 
 				if (Fin.r > 1) {
 					Fin.rgb = Fin.rgb * 2;
-				}
-				
+				}				
 
 				if ((Fin.r + Fin.g + Fin.b) > 2.9) {
 			//		Fin.rgb =  5;
 				}
 
-				//		float4 norm_;
-
-				//		for (int i = 0; i < _PlaneCount; ++i)
-					//		{
-					
-				//	float tmpTime = CheckCollideRayWithPlane(rayStart, rayDirection, plane);
-
-
-			//	}
-		//		norm_ = GetUnpackedPlaneByIndex(ID_);
-
-
-			//	float3x3 mT = unity_WorldToObject;
-
-				//	return float4(unity_WorldToObject[2][0], unity_WorldToObject[2][1], unity_WorldToObject[2][2],1);
-
-
-
-
-			//	return float4(i.Color);
-
-						return Fin;
-
-						//	return float4(cameraLocalPos.x, cameraLocalPos.x, cameraLocalPos.x,1);
-
-
-			//	return lerp (Fin,pow(Fin,2) * 1.2,Contrast);
-
-
-
-			//	 return float4(dot(Fin.rgb, float3(0.299, 0.587, 0.114)), dot(Fin.rgb, float3(0.299, 0.587, 0.114)),,1);
-
-				//return reflectionColor*reflectionRate + refractionColor*(1.0-reflectionRate);
+				return Fin;
 			}
 
 			ENDCG
 		}
-		
-
-
-		
 		Pass
 		{
 			Name "ShadowCaster"
@@ -350,11 +212,11 @@ Shader "Diamonds/DiamondShader" {
 
 
 			float4 CentrePivotDiamond;
-float4 CentrePivotDiamond2;
-float CentreIntensity;
-float4x4 MatrixWorldToObject;
-float4x4 MatrixWorldToObject2;
-float4 CentreModel;
+			float4 CentrePivotDiamond2;
+			float CentreIntensity;
+			float4x4 MatrixWorldToObject;
+			float4x4 MatrixWorldToObject2;
+			float4 CentreModel;
 
 			struct v2f {
 				V2F_SHADOW_CASTER;
@@ -388,9 +250,6 @@ float4 CentreModel;
 		}
 
 	}
-	
-		
-
 
 	FallBack "Diffuse"
 }

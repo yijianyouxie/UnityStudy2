@@ -65,17 +65,18 @@ public class DiamondSparkleController : MonoBehaviour
         for (int i = 0; i < veticesLenth; i++)
         {
             int randomVertexIndex = useRandom ? Random.Range(0, vertices.Length) : i;
-            Vector3 worldPosition = diamondRenderer.transform.TransformPoint(vertices[randomVertexIndex]);
             if(index >= maxParticleNum)
             {
                 continue;
             }
 
+            Vector3 worldPosition = diamondRenderer.transform.TransformPoint(vertices[randomVertexIndex]);
             if (useDotNV)
             {
                 var normal = normals[randomVertexIndex];
+                Vector3 worldNormal = diamondRenderer.transform.TransformDirection(normal);
                 var vertDir = camTr.position - worldPosition;
-                var dotNV = Vector3.Dot(normal, Vector3.Normalize(vertDir));
+                var dotNV = Vector3.Dot(worldNormal, Vector3.Normalize(vertDir));
                 //Debug.LogError("=======dotNV:" + dotNV);
                 if (dotNV > dotThreshold)
                 {
