@@ -108,7 +108,7 @@ Material:
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _PlaneCount: 57
-    - _RefractiveIndex: 1.6
+    - _RefractiveIndex: 2.63
     - _Scale: 0.01260042
     - _SizeX: 8
     - _SizeY: 8

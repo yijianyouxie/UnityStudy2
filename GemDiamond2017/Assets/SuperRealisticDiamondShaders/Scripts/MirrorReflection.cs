@@ -3,6 +3,7 @@ using System.Collections;
 
 
 //[ExecuteAlways]
+[ExecuteInEditMode]
 public class MirrorReflection : MonoBehaviour
 {
 	public bool _DisablePixelLights = true;

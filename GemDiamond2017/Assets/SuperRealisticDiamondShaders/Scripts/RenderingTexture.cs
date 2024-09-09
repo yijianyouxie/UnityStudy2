@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 //[ExecuteAlways]
+[ExecuteInEditMode]
 public class RenderingTexture : MonoBehaviour
 {
 

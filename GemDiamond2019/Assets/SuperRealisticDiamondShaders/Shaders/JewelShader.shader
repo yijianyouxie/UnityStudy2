@@ -124,7 +124,7 @@ Shader "Diamonds/DiamondShader" {
 				//
 
 				
-
+				//获得从摄像机指向顶点的向量
 				float3 localRay = normalize(pos - cameraLocalPos) ;
 
 				float3 normal = i.Normal;
@@ -140,6 +140,18 @@ Shader "Diamonds/DiamondShader" {
 				//tmpR = tmpR * 2;
 				float  PlaneNull;
 
+				/*
+				--Pos 相对于几何中心点的本地坐标
+				--PassCount
+				--rayNormalized 摄像机指向顶点的向量
+				--TriangleNormal 三角面的发现
+				--startSideRelativeRefraction 起始侧的相对折射
+				--reflectionRate 反射率
+				--reflectionRate2 反射率2
+				--reflection 反射方向
+				--refraction 折射方向
+				--HorizontalElementSquared
+				*/
 					CollideRayWithPlane(pos,0,localRay, plane, 1.0/tmpR, reflectionRate, reflectionRate2, reflectionRay, refractionRay, PlaneNull);
 					float4 refractionColor = GetColorByRay(pos, refractionRay, tmpR, 0, _Color, lighttransmission);
 				refractionColor.w = 1.0;
@@ -160,10 +172,10 @@ Shader "Diamonds/DiamondShader" {
 				//float4 reflectionColor = max(texCUBE(_Environment, reflectionRay) * Spec, 2);
 
 			//	float4 reflectionColor = pow(texCUBE(ReflectionCube, reflectionRay) * Spec * (1 + lightEstimation) / 2, 1);
-
+				//世界空间的从点指向摄像机方向
 				float3 _worldViewDir = UnityWorldSpaceViewDir(i.worldPos);
 				_worldViewDir = normalize(_worldViewDir);
-
+				//计算菲涅尔
 				float fresnelNdotV5 = dot(normal, _worldViewDir);
 				float fresnelNode5 = (1 * pow(1.0 - fresnelNdotV5,1));
 
@@ -174,6 +186,8 @@ Shader "Diamonds/DiamondShader" {
 			//	float3 ase_worldNormal = i.ase_texcoord1.xyz;
 			//	float3 ase_worldViewDir = UnityWorldSpaceViewDir(WorldPosition);
 			//	ase_worldViewDir = normalize(ase_worldViewDir);
+				//世界空间的反射
+				//实际没有用到，实际用的是通过法线贴图算出来的
 				float3 _worldReflection = reflect(-_worldViewDir, normal);
 
 
@@ -189,12 +203,13 @@ Shader "Diamonds/DiamondShader" {
 				float3 tanToWorld2 = float3(_worldTangent.z, _worldBitangent.z, _worldNormal.z);
 
 				float2 uvNormal = i.uv * NormalMap_ST.xy + NormalMap_ST.zw;
-
+				//世界空间的反射
 				float3 worldRefl3 = reflect(-_worldViewDir, float3(dot(tanToWorld0, UnpackNormal(tex2D(NormalMap, uvNormal))), dot(tanToWorld1, UnpackNormal(tex2D(NormalMap, uvNormal))), dot(tanToWorld2, UnpackNormal(tex2D(NormalMap, uvNormal)))));
 
-
+				//高光贴图算高光
 				float spec_ = tex2D(_Specular, i.uv * _Specular_ST.xy + _Specular_ST.zw) * Spec;
 
+				//反射颜色
 				float4 reflectionColor = texCUBE(ReflectionCube, worldRefl3) * spec_ * fresnelNode5;
 
 				////////////	float4 reflectionColor = clamp((texCUBE(ReflectionCube, reflectionRay) * Spec) * fresnelNode5, 0, 1) ;

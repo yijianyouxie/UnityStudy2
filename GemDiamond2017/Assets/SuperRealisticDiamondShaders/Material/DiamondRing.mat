@@ -4,9 +4,8 @@
 Material:
   serializedVersion: 6
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
   m_Name: DiamondRing
   m_Shader: {fileID: 4800000, guid: 6aa8c547a830c6944a78a6934111b781, type: 3}
   m_ShaderKeywords: _CUBEMAPMODE_CUBEMAP
@@ -90,7 +89,7 @@ Material:
     - MipLevel: 0
     - PostExposure: 1.14
     - Power: 1
-    - Spec: 0.4
+    - Spec: 0.1
     - TotalInternalReflection: 1
     - _BaseReflection: 0.3
     - _BumpScale: 1
