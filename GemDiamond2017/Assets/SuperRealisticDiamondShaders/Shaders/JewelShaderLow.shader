@@ -131,7 +131,7 @@ Shader "Diamonds/DiamondShaderLow(Max3Reflection)" {
 				//tmpR = tmpR * 2;
 				float  PlaneNull;
 				_MaxReflection = 3;
-					CollideRayWithPlane(pos,0,localRay, plane, 1.0/tmpR, reflectionRate, reflectionRate2, reflectionRay, refractionRay, PlaneNull);
+					CollideRayWithPlane(0,localRay, plane, 1.0/tmpR, reflectionRate, /*reflectionRate2,*/ reflectionRay, refractionRay, PlaneNull);
 				float4 refractionColor = GetColorByRay(pos, refractionRay, tmpR, _MaxReflection, _Color, lighttransmission);
 				refractionColor.w = 1.0;
 
@@ -356,7 +356,7 @@ Shader "Diamonds/DiamondShaderLow(Max3Reflection)" {
 						//tmpR = tmpR * 2;
 						float  PlaneNull;
 
-							CollideRayWithPlane(pos,0,localRay, plane, 1.0 / tmpR, reflectionRate, reflectionRate2, reflectionRay, refractionRay, PlaneNull);
+							CollideRayWithPlane(0,localRay, plane, 1.0 / tmpR, reflectionRate, /*reflectionRate2,*/ reflectionRay, refractionRay, PlaneNull);
 						float4 refractionColor = GetColorByRay(pos, refractionRay, tmpR,i.uv, _Color, lighttransmission);
 						refractionColor.w = 1.0;
 

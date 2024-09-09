@@ -63,7 +63,7 @@ float ColorIntensity;
     
     //float3 VertP = lerp(v.vertex, float3(v.uv2, v.uv3.x), Test);
    
-    
+    //构建世界切线，法线，次法线
     float3 _worldTangent = UnityObjectToWorldDir(v.tangent);
     o.tangent.xyz = _worldTangent;
     float3 _worldNormal = UnityObjectToWorldNormal(v.normal);
@@ -76,7 +76,9 @@ float ColorIntensity;
     
     
     float4 pos = v.vertex;
-
+	//得到了一个相对于中心点的一个本地坐标
+	//其实是得到相对于轴心点的位置，因为后边的摄像机的位置也是根据模型的轴心点来的。
+	//摄像机变换到模型本地的矩阵中和这里都减去了CentreModel，是不是也可以都不减去呢
     pos.xyz = (pos.xyz - CentreModel.xyz);
     
     o.vertex = UnityObjectToClipPos(pos);
@@ -85,11 +87,12 @@ float ColorIntensity;
     
  //   cameraLocalPos = mul(MatrixWorldToObject, float4(_WorldSpaceCameraPos, 1));
     
+	//获取摄像机在钻石模型空间中的位置
     cameraLocalPos = mul(MatrixWorldToObject, float4(_WorldSpaceCameraPos, 1));
     
     
     
-    
+    //Pos2就是摄像机在钻石模型空间中的位置
     o.Pos2 = cameraLocalPos;
     
     
@@ -103,6 +106,7 @@ float ColorIntensity;
     o.uv2 = v.uv2;
     o.uv3 = v.uv3;
   //  o.uv4 = v.uv4;
+	//Pos就是相对于中心点的本地坐标
     o.Pos = float4(pos.xyz, 1);
 				o.Normal = v.normal;
     o.Color = v.Color;
@@ -241,9 +245,23 @@ float CheckCollideRayWithPlane(float3 rayStart, float3 rayNormalized, float4 nor
 				return -1;
 			}
 
-
-void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, float4 TriangleNormal, float startSideRelativeRefraction, out float reflectionRate, out float reflectionRate2, out float3 reflection, out float3 refraction, out float HorizontalElementSquared)
+/*
+--Pos 相对于几何中心点的本地坐标
+--PassCount
+--rayNormalized 摄像机指向顶点的向量
+--TriangleNormal 三角面的发现
+--startSideRelativeRefraction 起始侧的相对折射
+--reflectionRate 反射率
+--reflectionRate2 反射率2
+--reflection 反射方向
+--refraction 折射方向
+--HorizontalElementSquared 
+*/
+void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, float4 TriangleNormal, 
+						float startSideRelativeRefraction, out float reflectionRate, 
+						out float reflectionRate2, out float3 reflection, out float3 refraction, out float HorizontalElementSquared)
 			{
+	//垂直于三角面的射线
     float3 rayVertical = dot(TriangleNormal.xyz, rayNormalized) * TriangleNormal.xyz;
 				reflection = rayNormalized - rayVertical*2.0;
     
@@ -275,7 +293,9 @@ void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, floa
     HorizontalElementSquared = 0;
   //  HorizontalElementSquared = horizontalElementSquared;
     
-    
+    //UnityWorldSpaceViewDir这个接口应该是接受一个世界坐标，然后返回世界空间下的从物体指向摄像机的方向
+	//但是这里是一个本地坐标啊
+	//这里计算出来后用来计算fresnel，fresnel并没有用到
     float3 _worldViewDir = UnityWorldSpaceViewDir(Pos);
     _worldViewDir = normalize(_worldViewDir);
     
@@ -297,12 +317,13 @@ void CollideRayWithPlane(float3 Pos, float PassCount, float3 rayNormalized, floa
 
 					return;
 				}				
-			
+				//垂直大小的平方 = 1 - 水平大小的平方
 				float verticalSizeSquared = 1-horizontalElementSquared;
 
 				float3 refractVertical = rayVertical * sqrt( verticalSizeSquared / dot(rayVertical, rayVertical));
  //   HorizontalElementSquared = verticalSizeSquared;
     
+				//折射方向等于水平的加上垂直的
 				refraction = refractHorizontal + refractVertical;
 
    //  refraction = lerp(TriangleNormal.xyz, refraction, Test_);
