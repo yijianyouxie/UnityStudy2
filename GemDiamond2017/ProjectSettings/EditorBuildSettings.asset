@@ -6,8 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/SuperRealisticDiamondShaders/Demos/Diamond Optimization.unity
+    guid: 036b4a213c67db949b8467d77dacd7a7
+  - enabled: 1
+    path: Assets/SuperRealisticDiamondShaders/Demos/Diamond Scene.unity
+    guid: b9c60f9b0918fb44ab8570e087eee8de
+  - enabled: 1
     path: Assets/SuperRealisticDiamondShaders/Demos/Diamond Scene2.unity
     guid: eb25bab8c2a6ee7419d2086ff05e5f2c
+  - enabled: 1
+    path: Assets/SuperRealisticDiamondShaders/Demos/Diamond Scene3.unity
+    guid: 47e72d9756437f14eb1f93f950aea095
   - enabled: 1
     path: Assets/SuperRealisticDiamondShaders/Demos/Diamonds Scene.unity
     guid: 9501c14d16da1e046b7058e222e5261d

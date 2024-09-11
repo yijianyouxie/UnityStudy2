@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class RotationCamera : MonoBehaviour
 {
@@ -67,5 +68,29 @@ public class RotationCamera : MonoBehaviour
         r += SpeedAutoRotation * Time.deltaTime + mp;
         transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, r, 0);
 
+    }
+
+    private void OnGUI()
+    {
+        if(GUI.Button(new Rect(100, Screen.height - 100, 100, 80), "Optimization"))
+        {
+            SceneManager.LoadScene(0);
+        }
+        if (GUI.Button(new Rect(100, Screen.height - 200, 100, 80), "Scene"))
+        {
+            SceneManager.LoadScene(1);
+        }
+        if (GUI.Button(new Rect(100, Screen.height - 300, 100, 80), "Scene2"))
+        {
+            SceneManager.LoadScene(2);
+        }
+        if (GUI.Button(new Rect(100, Screen.height - 400, 100, 80), "Scene3"))
+        {
+            SceneManager.LoadScene(3);
+        }
+        if (GUI.Button(new Rect(100, Screen.height - 500, 100, 80), "Diamonds"))
+        {
+            SceneManager.LoadScene(4);
+        }
     }
 }
